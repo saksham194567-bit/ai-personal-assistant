@@ -1,2 +1,1 @@
-# ai-personal-assistant
-Personal AI assistant project
+# AI Personal Assistant Backend
