@@ -13,6 +13,7 @@
 import { useState } from 'react';
 import '../styles/planner.css';
 import { useAppContext } from '../context/AppContext';
+import { api } from '../services/api';
 
 // ── Time slots to display ────────────────────────────────────────────────────
 const HOURS = [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22];
@@ -76,7 +77,7 @@ function ProgressRing({ pct }) {
 
 // ── Main DailyPlanner Component ──────────────────────────────────────────────
 function DailyPlanner() {
-  const { plannerEvents, addPlannerEvent, deletePlannerEvent } = useAppContext();
+  const { plannerEvents, addPlannerEvent, deletePlannerEvent, tasks } = useAppContext();
 
   // The currently viewed date
   const [viewDate, setViewDate] = useState(new Date());
@@ -85,6 +86,11 @@ function DailyPlanner() {
   // Track which hour slot has the inline "add event" input open
   const [addingAtHour, setAddingAtHour] = useState(null);
   const [newEventText, setNewEventText] = useState('');
+  const [planStartHour, setPlanStartHour] = useState(8);
+  const [planEndHour, setPlanEndHour] = useState(18);
+  const [suggestedSchedule, setSuggestedSchedule] = useState(null);
+  const [isPlanning, setIsPlanning] = useState(false);
+  const [plannerError, setPlannerError] = useState('');
 
   // Daily goals: simple local state (could be persisted too)
   const [goals, setGoals] = useState([
@@ -119,6 +125,48 @@ function DailyPlanner() {
   // Toggle a daily goal
   function toggleGoal(id) {
     setGoals((prev) => prev.map((g) => g.id === id ? { ...g, done: !g.done } : g));
+  }
+
+  async function handleSuggestSchedule() {
+    const pendingTasks = tasks.filter((task) => !task.completed);
+    if (!pendingTasks.length) {
+      setPlannerError('Add an incomplete task before asking for a schedule.');
+      return;
+    }
+    if (pendingTasks.length > 50) {
+      setPlannerError('The planner can schedule up to 50 tasks at a time. Mark completed tasks or reduce your pending list, then try again.');
+      return;
+    }
+    setPlannerError('');
+    setSuggestedSchedule(null);
+    setIsPlanning(true);
+    try {
+      const busyHours = Object.entries(plannerEvents[dateKey] || {}).flatMap(([hour, events]) =>
+        events.length ? [Number(hour)] : []
+      );
+      const result = await api.chat.planDay({
+        date: dateKey,
+        availableHours: { startHour: Number(planStartHour), endHour: Number(planEndHour) },
+        busyHours,
+        tasks: pendingTasks.map(({ id, title, priority, dueDate }) => ({ id, title, priority, dueDate: dueDate || '' })),
+      });
+      if (!Array.isArray(result.items)) throw new Error('The server returned an invalid schedule. Please try again.');
+      setSuggestedSchedule(result);
+    } catch (err) {
+      setPlannerError(err.message || 'Could not create a schedule. Please try again.');
+    } finally {
+      setIsPlanning(false);
+    }
+  }
+
+  function handleSaveSuggestedSchedule() {
+    if (!suggestedSchedule) return;
+    const taskById = new Map(tasks.map((task) => [task.id, task]));
+    suggestedSchedule.items.forEach((item) => {
+      const task = taskById.get(item.taskId);
+      if (task) addPlannerEvent(dateKey, item.startHour, `${formatHour(item.startHour)}–${formatHour(item.endHour)} · ${task.title}`);
+    });
+    setSuggestedSchedule(null);
   }
 
   // Events for today's key
@@ -258,6 +306,48 @@ function DailyPlanner() {
                   <span className={`goal-text ${goal.done ? 'done' : ''}`}>{goal.text}</span>
                 </div>
               ))}
+            </div>
+
+            {/* AI Daily Schedule */}
+            <div className="card ai-planner-card">
+              <div className="dashboard-section-title">✨ Build a schedule with AI</div>
+              <p className="ai-planner-help">Uses your incomplete tasks and priorities. Review the suggestion before adding it to this day.</p>
+              <div className="ai-planner-hours">
+                <label>From
+                  <select className="input" value={planStartHour} onChange={(e) => {
+                    const nextStart = Number(e.target.value);
+                    setPlanStartHour(nextStart);
+                    if (planEndHour <= nextStart) setPlanEndHour(nextStart + 1);
+                  }}>
+                    {HOURS.slice(0, -1).map((hour) => <option key={hour} value={hour}>{formatHour(hour)}</option>)}
+                  </select>
+                </label>
+                <label>Until
+                  <select className="input" value={planEndHour} onChange={(e) => setPlanEndHour(Number(e.target.value))}>
+                    {HOURS.filter((hour) => hour > planStartHour).map((hour) => <option key={hour} value={hour}>{formatHour(hour)}</option>)}
+                  </select>
+                </label>
+              </div>
+              <button className="btn btn-primary" onClick={handleSuggestSchedule} disabled={isPlanning}>
+                {isPlanning ? 'Creating schedule…' : 'Suggest my day'}
+              </button>
+              {plannerError && <p className="ai-planner-error" role="alert">{plannerError}</p>}
+              {suggestedSchedule && (
+                <div className="ai-schedule-review" aria-live="polite">
+                  <strong>Review this suggestion</strong>
+                  {suggestedSchedule.items.length ? suggestedSchedule.items.map((item) => {
+                    const task = tasks.find((entry) => entry.id === item.taskId);
+                    return <div key={item.taskId} className="ai-schedule-item">
+                      <span>{formatHour(item.startHour)}–{formatHour(item.endHour)}</span>
+                      <span>{task?.title || 'Task'}{item.reason ? ` — ${item.reason}` : ''}</span>
+                    </div>;
+                  }) : <p>No tasks fit in those hours. Try a wider work window.</p>}
+                  <div className="ai-schedule-actions">
+                    <button className="btn btn-primary" onClick={handleSaveSuggestedSchedule} disabled={!suggestedSchedule.items.length}>Add to planner</button>
+                    <button className="btn btn-secondary" onClick={() => setSuggestedSchedule(null)}>Discard</button>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Tip Card */}

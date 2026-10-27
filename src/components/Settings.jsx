@@ -4,14 +4,13 @@
  * Sections:
  *   - Profile    : User name & avatar.
  *   - Appearance : Accent color pickers, compact mode toggle.
- *   - AI Provider: Where the user will add their API key (stored locally).
+ *   - AI Provider: Server-side provider configuration guidance.
  *   - Notifications: Toggle options.
  *   - Data        : Clear all data (danger zone).
  *
- * Important: API keys are stored ONLY in the user's browser localStorage.
- *            They are never sent anywhere except the AI provider's endpoint.
+ * Provider credentials belong in backend environment variables, never here.
  */
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import '../styles/settings.css';
 import { useAppContext } from '../context/AppContext';
 
@@ -34,19 +33,15 @@ const ACCENT_COLORS = [
   { value: '#ef4444', label: 'Red'    },
 ];
 
-// AI Provider options
-const AI_PROVIDERS = [
-  { value: '',               label: 'Not connected' },
-  { value: 'openai',         label: 'OpenAI (GPT)' },
-  { value: 'google-gemini',  label: 'Google Gemini' },
-  { value: 'anthropic',      label: 'Anthropic (Claude)' },
-];
-
 function Settings() {
   const { settings, updateSettings } = useAppContext();
   const [activeSection, setActiveSection] = useState('profile');
-  const [apiKeyVisible, setApiKeyVisible] = useState(false);
   const [saved, setSaved] = useState(false);
+
+  // Remove keys saved by the old browser-based setup from localStorage.
+  useEffect(() => {
+    if (settings.apiKey) updateSettings({ apiKey: '' });
+  }, [settings.apiKey]);
 
   // Show a brief "Saved!" flash after any change
   function save(updates) {
@@ -175,7 +170,7 @@ function Settings() {
               <>
                 <div className="settings-panel-header">
                   <h2>🤖 AI Provider</h2>
-                  <p>Connect an AI provider to enable live chat responses.</p>
+                  <p>AI requests use the provider configured by the backend.</p>
                 </div>
                 <div className="settings-panel-body">
                   {/* Info box */}
@@ -187,73 +182,17 @@ function Settings() {
                     marginBottom: 'var(--space-2)',
                   }}>
                     <p style={{ fontSize: 'var(--font-xs)', color: 'var(--info)', margin: 0, lineHeight: 1.7 }}>
-                      🔒 <strong>Privacy note:</strong> Your API key is stored only in your browser's localStorage.
-                      It is never sent to any server except the AI provider's own endpoint when you send a chat message.
+                      🔒 Provider keys are stored on the backend and never in browser settings. For local setup, configure <code>GEMINI_API_KEY</code> in <code>backend/.env</code>.
                     </p>
                   </div>
 
                   <div className="setting-row">
                     <div className="setting-info">
                       <h4>AI Provider</h4>
-                      <p>Select which AI service to use.</p>
+                      <p>Provider and model selection are configured on the server.</p>
                     </div>
-                    <select
-                      id="settings-ai-provider"
-                      className="input"
-                      style={{ width: '220px' }}
-                      value={settings.aiProvider}
-                      onChange={(e) => save({ aiProvider: e.target.value })}
-                      aria-label="Select AI provider"
-                    >
-                      {AI_PROVIDERS.map((p) => (
-                        <option key={p.value} value={p.value}>{p.label}</option>
-                      ))}
-                    </select>
+                    <div className="setting-info"><strong>Google Gemini</strong><br /><small>Model: GEMINI_MODEL in backend/.env</small></div>
                   </div>
-
-                  <div className="setting-row">
-                    <div className="setting-info">
-                      <h4>API Key</h4>
-                      <p>
-                        Your secret API key for the chosen provider.{' '}
-                        <strong style={{ color: 'var(--warning)' }}>Never share this with anyone.</strong>
-                      </p>
-                    </div>
-                    <div className="api-key-field">
-                      <input
-                        id="settings-api-key"
-                        className="input"
-                        type={apiKeyVisible ? 'text' : 'password'}
-                        value={settings.apiKey}
-                        onChange={(e) => save({ apiKey: e.target.value })}
-                        placeholder="sk-..."
-                        aria-label="API key"
-                        style={{ width: '220px' }}
-                        autoComplete="off"
-                      />
-                      <button
-                        className="btn-icon"
-                        onClick={() => setApiKeyVisible((v) => !v)}
-                        aria-label={apiKeyVisible ? 'Hide API key' : 'Show API key'}
-                        title={apiKeyVisible ? 'Hide' : 'Show'}
-                      >
-                        {apiKeyVisible ? '🙈' : '👁️'}
-                      </button>
-                    </div>
-                  </div>
-
-                  {settings.apiKey && settings.aiProvider && (
-                    <div style={{
-                      background: 'var(--success-bg)',
-                      border: '1px solid rgba(16,185,129,0.25)',
-                      borderRadius: 'var(--radius)',
-                      padding: 'var(--space-3) var(--space-4)',
-                    }}>
-                      <p style={{ color: 'var(--success)', fontSize: 'var(--font-sm)', margin: 0 }}>
-                        ✅ AI is connected! Open the <strong>AI Chat</strong> tab to start chatting.
-                      </p>
-                    </div>
-                  )}
                 </div>
               </>
             )}

@@ -13,8 +13,10 @@ A modern, full-stack AI Personal Assistant built with **React (Vite)**, **Node.j
   - **Task Manager**: High/medium/low priority tasks with filtering and due dates.
   - **Daily Planner**: Time-blocking calendar for scheduling events throughout the day.
   - **Notes**: Color-coded rich notes with instant search and live edit.
-  - **AI Chat**: Conversation interface communicating with Google Gemini.
-  - **Settings & Profile**: Theme colors, notifications, AI provider configs.
+  - **AI Chat**: Authenticated Gemini chat with loading, quota, and provider errors.
+  - **Daily Planner**: AI schedule suggestions from tasks and existing planner events, reviewed before saving.
+  - **Notes**: AI summaries are shown separately and never replace note text.
+  - **Settings & Profile**: Theme colors, notifications, and server-side AI setup guidance.
   - **AuthModal**: Glassmorphic login & registration modal (Email/Password + Google).
 - **Offline & Resilient**: Optimistic state with automatic `localStorage` caching and background cloud syncing.
 
@@ -25,7 +27,7 @@ A modern, full-stack AI Personal Assistant built with **React (Vite)**, **Node.j
   - `/api/tasks` — Task creation, retrieval, updates, and deletion.
   - `/api/notes` — Notes CRUD with search and color tagging.
   - `/api/planner` — Hourly scheduled event management.
-  - `/api/chat` — Gemini AI proxy keeping API keys private server-side.
+  - `/api/chat` — Authenticated Gemini chat, structured planning, and note summarization.
   - `/api/user` — User settings and profile updates.
   - `/api/health` — System status and heartbeat.
 
@@ -50,16 +52,16 @@ A modern, full-stack AI Personal Assistant built with **React (Vite)**, **Node.j
 
 ## 🚀 Quick Start Guide
 
-### 1. Start the Backend Server
+### 1. Configure and start the backend
+
+Copy `backend/.env.example` to `backend/.env`, then fill in your own Firebase Admin credentials and Gemini API key. The example contains placeholders only. The AI key is read only by the backend.
+
 ```bash
-# In one terminal:
+# From the project root:
 npm run server
 ```
-Or:
-```bash
-cd backend
-node server.js
-```
+
+Firebase Admin credentials are required for protected API routes; the backend intentionally rejects demo or unsigned tokens. MongoDB is optional for local task/note storage, which already uses browser localStorage.
 
 ### 2. Start the Frontend
 ```bash
@@ -73,11 +75,13 @@ Open **[http://localhost:5173](http://localhost:5173)** in your browser!
 ## 🔑 Environment Configuration
 
 ### Backend (`backend/.env`)
-Copy `backend/.env.example` to `backend/.env` and fill in:
+Copy `backend/.env.example` to `backend/.env` and fill in the placeholders. Keep this file out of Git (the repository ignores it):
 ```env
 PORT=5000
 NODE_ENV=development
 MONGO_URI=mongodb://127.0.0.1:27017/ai_personal_assistant
+AI_PROVIDER=gemini
+GEMINI_MODEL=gemini-3.1-flash-lite
 GEMINI_API_KEY=your_gemini_api_key_here
 FRONTEND_URL=http://localhost:5173
 
@@ -86,6 +90,10 @@ FIREBASE_PROJECT_ID=your_project_id
 FIREBASE_CLIENT_EMAIL=your_service_account@project.iam.gserviceaccount.com
 FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
 ```
+
+Create a Gemini API key in [Google AI Studio](https://aistudio.google.com/app/apikey). Google currently lists free usage for some Gemini API models; quotas and eligibility vary by model and can change. If you exceed the free tier or enable paid billing, usage may incur charges. See [current Gemini API pricing](https://ai.google.dev/gemini-api/docs/pricing). No new package installation is required for Gemini in this repository.
+
+`AI_PROVIDER` and `GEMINI_MODEL` are backend settings. Gemini is the supported provider in this implementation; changing the model does not require frontend edits. Do not paste a provider key into the Settings page or any `VITE_*` variable.
 
 ### Frontend (`.env`)
 ```env

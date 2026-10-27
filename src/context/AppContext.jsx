@@ -74,18 +74,9 @@ const DEFAULT_SETTINGS = {
   soundEffects: false,
   compactMode: false,
   aiProvider: 'gemini',
-  apiKey: '',
 };
 
-const DEFAULT_CHAT = [
-  {
-    id: generateId(),
-    role: 'assistant',
-    content:
-      "👋 Hi! I'm your AI Assistant powered by Google Gemini.\n\nBackend server is integrated with Express + MongoDB + Firebase Auth! Type any question below or ask me to organize your day.",
-    timestamp: new Date().toISOString(),
-  },
-];
+const DEFAULT_CHAT = [];
 
 // ─── Provider ─────────────────────────────────────────────────────────────────
 export function AppProvider({ children }) {
@@ -233,6 +224,14 @@ export function AppProvider({ children }) {
 
   // ── Settings ───────────────────────────────────────────────────────────────
   const [settings, setSettings] = useLocalStorage('aipa_settings', DEFAULT_SETTINGS);
+
+  // Migrate away any API key previously entered into browser settings.
+  useEffect(() => {
+    if (settings.apiKey) {
+      const { apiKey, ...safeSettings } = settings;
+      setSettings(safeSettings);
+    }
+  }, [settings, setSettings]);
 
   function updateSettings(updates) {
     setSettings((prev) => ({ ...prev, ...updates }));

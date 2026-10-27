@@ -212,6 +212,62 @@
   gap: var(--space-4);
 }
 
+.ai-planner-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.ai-planner-help {
+  color: var(--text-muted);
+  font-size: var(--font-xs);
+  line-height: 1.6;
+  margin: 0;
+}
+.ai-planner-hours {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+.ai-planner-hours label {
+  color: var(--text-muted);
+  font-size: var(--font-xs);
+}
+.ai-planner-hours .input {
+  width: 100%;
+  margin-top: var(--space-1);
+}
+.ai-planner-error,
+.note-summary-error {
+  color: var(--danger);
+  font-size: var(--font-xs);
+  margin: 0;
+}
+.ai-schedule-review {
+  border-top: 1px solid var(--border-subtle);
+  padding-top: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  font-size: var(--font-xs);
+}
+.ai-schedule-item {
+  display: grid;
+  grid-template-columns: 76px 1fr;
+  gap: var(--space-2);
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+.ai-schedule-item > span:first-child {
+  color: var(--accent-light);
+  font-weight: 700;
+}
+.ai-schedule-actions {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  margin-top: var(--space-2);
+}
+
 /* ---------- Goals Widget ---------- */
 .goal-item {
   display: flex;

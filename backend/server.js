@@ -68,7 +68,7 @@ app.use('/api/chat', chatLimiter);
 
 // ─── General Middleware ───────────────────────────────────────────────────────
 app.use(morgan('dev'));              // HTTP request logger
-app.use(express.json({ limit: '10kb' }));  // Body parser with size limit
+app.use(express.json({ limit: '25kb' }));  // Bound JSON requests, including planner task lists.
 app.use(express.urlencoded({ extended: true }));
 
 // ─── MongoDB Connection ────────────────────────────────────────────────────────

@@ -12,6 +12,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import '../styles/notes.css';
 import { useAppContext } from '../context/AppContext';
+import { api } from '../services/api';
 
 // Available note accent colors
 const NOTE_COLORS = [
@@ -63,10 +64,15 @@ function Notes() {
 
   // "Saved" indicator
   const [showSaved, setShowSaved] = useState(false);
+  const [summary, setSummary] = useState('');
+  const [summaryError, setSummaryError] = useState('');
+  const [isSummarizing, setIsSummarizing] = useState(false);
 
   // When selected note changes, load it into the editor
   useEffect(() => {
     if (!selectedId) return;
+    setSummary('');
+    setSummaryError('');
     const note = notes.find((n) => n.id === selectedId);
     if (note) {
       setEditorTitle(note.title);
@@ -74,6 +80,25 @@ function Notes() {
       setEditorColor(note.color || '#8b5cf6');
     }
   }, [selectedId]); // intentionally not including notes to avoid cursor jumps
+
+  async function handleSummarize() {
+    if (!editorContent.trim()) {
+      setSummaryError('Add some note text before requesting a summary.');
+      setSummary('');
+      return;
+    }
+    setIsSummarizing(true);
+    setSummaryError('');
+    setSummary('');
+    try {
+      const result = await api.chat.summarize(editorContent);
+      setSummary(result.summary);
+    } catch (err) {
+      setSummaryError(err.message || 'Could not summarize this note. Please try again.');
+    } finally {
+      setIsSummarizing(false);
+    }
+  }
 
   // Debounced auto-save: fires 600ms after the user stops typing
   const debouncedSave = useDebounce((id, updates) => {
@@ -218,6 +243,10 @@ function Notes() {
                   </div>
                 )}
 
+                <button className="btn btn-secondary" onClick={handleSummarize} disabled={isSummarizing || !editorContent.trim()}>
+                  {isSummarizing ? 'Summarizing…' : 'Summarize'}
+                </button>
+
                 {/* Delete button */}
                 <button
                   className="btn btn-danger"
@@ -248,6 +277,16 @@ function Notes() {
                 placeholder="Start writing your note here..."
                 aria-label="Note content"
               />
+              {(summary || summaryError) && (
+                <section className="note-summary" aria-live="polite" aria-labelledby="note-summary-title">
+                  <div className="note-summary-heading">
+                    <h3 id="note-summary-title">AI summary</h3>
+                    <button className="btn-icon" onClick={() => { setSummary(''); setSummaryError(''); }} aria-label="Dismiss summary">✕</button>
+                  </div>
+                  {summaryError ? <p className="note-summary-error" role="alert">{summaryError}</p> : <p>{summary}</p>}
+                  <small>Your original note has not been changed.</small>
+                </section>
+              )}
             </div>
           ) : (
             <div className="note-editor-panel" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

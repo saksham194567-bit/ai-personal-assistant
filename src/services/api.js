@@ -9,25 +9,24 @@ import { auth } from '../config/firebase';
 
 const BASE_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000/api';
 
-async function getAuthHeaders() {
+async function getAuthHeaders(authRequired = false) {
   const headers = { 'Content-Type': 'application/json' };
+  if (authRequired && !auth?.currentUser) {
+    throw new Error('Sign in to use AI features.');
+  }
   try {
     if (auth?.currentUser) {
       const token = await auth.currentUser.getIdToken();
       headers['Authorization'] = `Bearer ${token}`;
-    } else {
-      // Dev mode fallback
-      headers['Authorization'] = 'Bearer demo-token';
     }
   } catch (err) {
-    console.warn('Could not get Firebase token, using demo-token:', err.message);
-    headers['Authorization'] = 'Bearer demo-token';
+    throw new Error('Please sign in again to use the AI features.');
   }
   return headers;
 }
 
-async function request(endpoint, options = {}) {
-  const headers = await getAuthHeaders();
+async function request(endpoint, options = {}, authRequired = false) {
+  const headers = await getAuthHeaders(authRequired);
   const config = {
     ...options,
     headers: {
@@ -47,48 +46,50 @@ async function request(endpoint, options = {}) {
 export const api = {
   // Auth & User Profile
   auth: {
-    syncUser: (userData) => request('/auth/sync', { method: 'POST', body: JSON.stringify(userData) }),
-    getProfile: () => request('/auth/me'),
-    getSettings: () => request('/user/settings'),
-    updateSettings: (settings) => request('/user/settings', { method: 'PUT', body: JSON.stringify(settings) }),
+    syncUser: (userData) => request('/auth/sync', { method: 'POST', body: JSON.stringify(userData) }, true),
+    getProfile: () => request('/auth/me', {}, true),
+    getSettings: () => request('/user/settings', {}, true),
+    updateSettings: (settings) => request('/user/settings', { method: 'PUT', body: JSON.stringify(settings) }, true),
   },
 
   // Tasks
   tasks: {
-    getAll: () => request('/tasks'),
-    create: (task) => request('/tasks', { method: 'POST', body: JSON.stringify(task) }),
-    update: (id, updates) => request(`/tasks/${id}`, { method: 'PUT', body: JSON.stringify(updates) }),
-    delete: (id) => request(`/tasks/${id}`, { method: 'DELETE' }),
+    getAll: () => request('/tasks', {}, true),
+    create: (task) => request('/tasks', { method: 'POST', body: JSON.stringify(task) }, true),
+    update: (id, updates) => request(`/tasks/${id}`, { method: 'PUT', body: JSON.stringify(updates) }, true),
+    delete: (id) => request(`/tasks/${id}`, { method: 'DELETE' }, true),
   },
 
   // Notes
   notes: {
-    getAll: () => request('/notes'),
-    create: (note) => request('/notes', { method: 'POST', body: JSON.stringify(note) }),
-    update: (id, updates) => request(`/notes/${id}`, { method: 'PUT', body: JSON.stringify(updates) }),
-    delete: (id) => request(`/notes/${id}`, { method: 'DELETE' }),
+    getAll: () => request('/notes', {}, true),
+    create: (note) => request('/notes', { method: 'POST', body: JSON.stringify(note) }, true),
+    update: (id, updates) => request(`/notes/${id}`, { method: 'PUT', body: JSON.stringify(updates) }, true),
+    delete: (id) => request(`/notes/${id}`, { method: 'DELETE' }, true),
   },
 
   // Planner
   planner: {
-    getEvents: (date) => request(`/planner${date ? `?date=${date}` : ''}`),
-    createEvent: (event) => request('/planner', { method: 'POST', body: JSON.stringify(event) }),
-    deleteEvent: (id) => request(`/planner/${id}`, { method: 'DELETE' }),
+    getEvents: (date) => request(`/planner${date ? `?date=${date}` : ''}`, {}, true),
+    createEvent: (event) => request('/planner', { method: 'POST', body: JSON.stringify(event) }, true),
+    deleteEvent: (id) => request(`/planner/${id}`, { method: 'DELETE' }, true),
   },
 
-  // AI Chat (Proxied via Backend to Google Gemini)
+  // AI features (proxied through the authenticated backend)
   chat: {
-    getHistory: () => request('/chat/history'),
-    getQuota: () => request('/chat/quota'),
-    sendMessage: (message) => request('/chat', { method: 'POST', body: JSON.stringify({ message }) }),
-    clearHistory: () => request('/chat/history', { method: 'DELETE' }),
+    getHistory: () => request('/chat/history', {}, true),
+    getQuota: () => request('/chat/quota', {}, true),
+    sendMessage: (message) => request('/chat', { method: 'POST', body: JSON.stringify({ message }) }, true),
+    clearHistory: () => request('/chat/history', { method: 'DELETE' }, true),
+    summarize: (text) => request('/chat/summarize', { method: 'POST', body: JSON.stringify({ text }) }, true),
+    planDay: (payload) => request('/chat/plan', { method: 'POST', body: JSON.stringify(payload) }, true),
   },
 
   // Admin Quota Management
   admin: {
-    getUsers: () => request('/admin/users'),
+    getUsers: () => request('/admin/users', {}, true),
     updateUserLimit: (uid, data) =>
-      request(`/admin/users/${uid}/limit`, { method: 'PUT', body: JSON.stringify(data) }),
+      request(`/admin/users/${uid}/limit`, { method: 'PUT', body: JSON.stringify(data) }, true),
   },
 
   // Health check

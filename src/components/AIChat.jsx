@@ -1,20 +1,6 @@
 /**
- * AIChat — Chat interface prepared for future AI provider integration.
- *
- * CURRENT STATE (Demo Mode):
- *   - The UI is fully functional.
- *   - No real AI is connected — the assistant responds with a polite
- *     demo message explaining this clearly.
- *   - A status banner at the top always shows whether AI is connected.
- *
- * FUTURE INTEGRATION:
- *   - In Settings, the user will enter their API key.
- *   - The sendToAI() function (marked with a TODO) is where you will
- *     call the real AI provider (e.g., OpenAI, Google Gemini, etc.).
- *   - The API key should NEVER be logged or sent anywhere except the
- *     intended provider's secure endpoint.
- *
- * Data persists via AppContext → localStorage.
+ * AIChat sends prompts to the authenticated backend. No demo responses are
+ * created when the backend or provider is unavailable.
  */
 import { useState, useRef, useEffect } from 'react';
 import '../styles/chat.css';
@@ -44,6 +30,7 @@ function AIChat() {
   const [isTyping, setIsTyping]     = useState(false);
   const [backendOnline, setBackendOnline] = useState(false);
   const [quota, setQuota]           = useState(null);
+  const [requestError, setRequestError] = useState('');
   const messagesEndRef               = useRef(null);
   const textareaRef                  = useRef(null);
 
@@ -52,9 +39,8 @@ function AIChat() {
     api.health()
       .then(() => {
         setBackendOnline(true);
-        return api.chat.getQuota();
+        return api.chat.getQuota().then(setQuota).catch(() => {});
       })
-      .then((q) => setQuota(q))
       .catch(() => setBackendOnline(false));
   }, []);
 
@@ -79,6 +65,7 @@ function AIChat() {
     // Add user message to history
     addChatMessage('user', text);
     setInputText('');
+    setRequestError('');
 
     // Reset textarea height
     if (textareaRef.current) textareaRef.current.style.height = 'auto';
@@ -87,7 +74,6 @@ function AIChat() {
     setIsTyping(true);
 
     try {
-      // 1. Try sending to the backend which communicates with Gemini API
       const res = await api.chat.sendMessage(text);
       if (res?.reply) {
         addChatMessage('assistant', res.reply);
@@ -97,21 +83,7 @@ function AIChat() {
         }
       }
     } catch (err) {
-      console.warn('Backend chat request error:', err.message);
-
-      // Friendly fallback if backend, quota limit, or Gemini key is missing
-      const fallbackResponse =
-        `🤖 **Server Response**:\n\n` +
-        (err.message.includes('limit reached')
-          ? `⚠️ **Token Quota Reached**: ${err.message}`
-          : err.message.includes('GEMINI_API_KEY')
-          ? `Your backend is connected, but **GEMINI_API_KEY** is not configured yet in \`backend/.env\`.\n\n` +
-            `👉 Add your free Gemini API key to \`backend/.env\` and restart the server to chat live!`
-          : `I received your message: _"${text}"_\n\n` +
-            `Note: The backend returned: \`${err.message}\`.\n` +
-            `To enable full AI power, make sure your backend is running (\`npm run dev\` inside \`backend/\`) with a valid \`GEMINI_API_KEY\`.`);
-
-      addChatMessage('assistant', fallbackResponse);
+      setRequestError(err.message || 'Could not get an AI response. Please try again.');
     } finally {
       setIsTyping(false);
     }
@@ -130,17 +102,26 @@ function AIChat() {
     textareaRef.current?.focus();
   }
 
-  // Simple markdown-like rendering: bold **text** and italic _text_
+  async function handleClearChat() {
+    clearChat();
+    setRequestError('');
+    if (backendOnline) {
+      try { await api.chat.clearHistory(); } catch (_) {}
+    }
+  }
+
+  // Render a small safe subset of markdown without injecting HTML.
   function renderMessage(content) {
     const lines = content.split('\n');
     return lines.map((line, i) => {
-      // Process **bold** and _italic_
-      const processed = line
-        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-        .replace(/_(.*?)_/g, '<em>$1</em>');
+      const parts = line.split(/(\*\*.*?\*\*|_.*?_)/g);
       return (
         <span key={i}>
-          <span dangerouslySetInnerHTML={{ __html: processed }} />
+          {parts.map((part, index) => {
+            if (part.startsWith('**') && part.endsWith('**')) return <strong key={index}>{part.slice(2, -2)}</strong>;
+            if (part.startsWith('_') && part.endsWith('_')) return <em key={index}>{part.slice(1, -1)}</em>;
+            return part;
+          })}
           {i < lines.length - 1 && <br />}
         </span>
       );
@@ -222,6 +203,12 @@ function AIChat() {
             </div>
           )}
 
+          {requestError && (
+            <div className="chat-request-error" role="alert">
+              {requestError}
+            </div>
+          )}
+
           {/* Scroll anchor */}
           <div ref={messagesEndRef} />
         </div>
@@ -251,6 +238,7 @@ function AIChat() {
               ref={textareaRef}
               className="chat-textarea"
               value={inputText}
+              maxLength={4000}
               onChange={(e) => { setInputText(e.target.value); autoResize(); }}
               onKeyDown={handleKeyDown}
               placeholder="Type a message… (Enter to send, Shift+Enter for new line)"
@@ -276,7 +264,7 @@ function AIChat() {
               <button
                 className="btn-ghost"
                 style={{ fontSize: 'var(--font-xs)', padding: '2px 8px' }}
-                onClick={clearChat}
+                onClick={handleClearChat}
                 aria-label="Clear chat history"
               >
                 Clear Chat
