@@ -1,16 +1,16 @@
 /**
  * config/firebase.js
  *
- * Initializes the Firebase Admin SDK using environment variables.
- * Falls back gracefully in development if credentials are not yet configured.
+ * Initializes Firebase Admin using the modular API available in v14.
+ * Credentials are read only from backend environment variables.
  */
 
-const admin = require('firebase-admin');
+const { cert, getApps, initializeApp } = require('firebase-admin/app');
+const { getAuth } = require('firebase-admin/auth');
 
-let isInitialized = false;
-const apps = admin.apps || [];
+let app = getApps()[0] || null;
 
-if (!apps.length) {
+if (!app) {
   const projectId = process.env.FIREBASE_PROJECT_ID;
   const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
   const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
@@ -24,14 +24,13 @@ if (!apps.length) {
     privateKey.length > 20
   ) {
     try {
-      admin.initializeApp({
-        credential: admin.credential.cert({
+      app = initializeApp({
+        credential: cert({
           projectId,
           clientEmail,
           privateKey,
         }),
       });
-      isInitialized = true;
       console.log('✅ Firebase Admin SDK initialized successfully');
     } catch (err) {
       console.warn('⚠️ Firebase Admin initialization failed:', err.message);
@@ -43,6 +42,6 @@ if (!apps.length) {
 }
 
 module.exports = {
-  admin,
-  isInitialized: () => Boolean((admin.apps || []).length && isInitialized),
+  auth: app ? getAuth(app) : null,
+  isInitialized: () => Boolean(app),
 };

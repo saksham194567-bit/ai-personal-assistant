@@ -5,7 +5,7 @@
  * Admin is not configured; development tokens must never authorize API access.
  */
 
-const { admin, isInitialized } = require('../config/firebase');
+const { auth, isInitialized } = require('../config/firebase');
 
 module.exports = async function verifyToken(req, res, next) {
   const authHeader = req.headers.authorization;
@@ -23,7 +23,7 @@ module.exports = async function verifyToken(req, res, next) {
   }
 
   try {
-    const decodedToken = await admin.auth().verifyIdToken(token);
+    const decodedToken = await auth.verifyIdToken(token);
     req.uid = decodedToken.uid;
     req.email = decodedToken.email;
     return next();
