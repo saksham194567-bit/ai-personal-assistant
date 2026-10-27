@@ -115,6 +115,8 @@ GitHub Pages does not run the backend.
    `https://your-service.onrender.com/api`). Add the `VITE_FIREBASE_*` client
    configuration values there as well if you change the Firebase project.
    Re-run the workflow after changing variables.
+5. In Firebase Console, add `saksham194567-bit.github.io` to **Authentication →
+   Settings → Authorized domains** so sign-in works from the deployed site.
 
 ### Deploy the backend
 
