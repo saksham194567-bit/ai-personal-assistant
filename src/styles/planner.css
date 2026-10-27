@@ -1,0 +1,329 @@
+/* ============================================================
+   DAILY PLANNER STYLES
+   ============================================================ */
+
+.planner-page {
+  animation: fadeInUp 0.35s ease forwards;
+}
+
+/* ---------- Date Navigation ---------- */
+.date-nav {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4) var(--space-5);
+}
+
+.date-display {
+  flex: 1;
+  text-align: center;
+}
+
+.date-display .day-name {
+  font-size: var(--font-2xl);
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--text-primary), var(--purple-300));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1;
+}
+
+.date-display .full-date {
+  font-size: var(--font-sm);
+  color: var(--text-muted);
+  margin-top: var(--space-1);
+}
+
+.date-nav-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  transition: var(--transition-fast);
+}
+.date-nav-btn:hover {
+  background: var(--accent-subtle);
+  color: var(--accent-light);
+  border-color: var(--border-focus);
+}
+
+.today-btn {
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-full);
+  background: var(--accent-subtle);
+  color: var(--accent-light);
+  border: 1px solid rgba(139, 92, 246, 0.25);
+  font-size: var(--font-xs);
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+.today-btn:hover {
+  background: var(--accent);
+  color: white;
+}
+
+/* ---------- Planner Layout ---------- */
+.planner-layout {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: var(--space-6);
+}
+
+/* ---------- Time Blocks ---------- */
+.time-blocks {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.time-blocks-header {
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.time-blocks-header h3 {
+  font-size: var(--font-base);
+  font-weight: 700;
+}
+
+.time-slot {
+  display: flex;
+  align-items: stretch;
+  border-bottom: 1px solid var(--border-subtle);
+  min-height: 70px;
+  transition: var(--transition-fast);
+}
+
+.time-slot:last-child {
+  border-bottom: none;
+}
+
+.time-slot:hover {
+  background: var(--bg-elevated);
+}
+
+.time-label {
+  width: 80px;
+  flex-shrink: 0;
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--font-xs);
+  color: var(--text-muted);
+  font-weight: 600;
+  border-right: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: flex-start;
+  padding-top: var(--space-4);
+}
+
+.time-slot-content {
+  flex: 1;
+  padding: var(--space-2) var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.planner-event {
+  background: var(--accent-subtle);
+  border: 1px solid rgba(139, 92, 246, 0.25);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--font-xs);
+  font-weight: 600;
+  color: var(--accent-light);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.planner-event:hover {
+  background: rgba(139, 92, 246, 0.2);
+}
+
+.planner-event.success {
+  background: var(--success-bg);
+  border-color: rgba(16, 185, 129, 0.25);
+  color: var(--success);
+}
+
+.planner-event.warning {
+  background: var(--warning-bg);
+  border-color: rgba(245, 158, 11, 0.25);
+  color: var(--warning);
+}
+
+.planner-event .event-delete {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: inherit;
+  opacity: 0;
+  font-size: 0.8rem;
+  padding: 0;
+  line-height: 1;
+  transition: var(--transition-fast);
+}
+.planner-event:hover .event-delete {
+  opacity: 1;
+}
+
+.add-event-btn {
+  background: none;
+  border: 1px dashed var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--font-xs);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: var(--transition-fast);
+  width: 100%;
+  text-align: left;
+}
+.add-event-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent-light);
+  background: var(--accent-subtle);
+}
+
+/* ---------- Sidebar Panel ---------- */
+.planner-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* ---------- Goals Widget ---------- */
+.goal-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.goal-item:last-child { border-bottom: none; }
+
+.goal-checkbox {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  border: 2px solid var(--border);
+  cursor: pointer;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  transition: var(--transition-fast);
+}
+.goal-checkbox.done {
+  background: var(--success);
+  border-color: var(--success);
+}
+.goal-checkbox.done::after {
+  content: '✓';
+  color: white;
+  font-size: 0.65rem;
+  font-weight: 700;
+}
+.goal-text {
+  font-size: var(--font-sm);
+  color: var(--text-secondary);
+  flex: 1;
+}
+.goal-text.done {
+  text-decoration: line-through;
+  color: var(--text-muted);
+}
+
+/* ---------- Progress Ring ---------- */
+.progress-widget {
+  text-align: center;
+  padding: var(--space-4);
+}
+
+.progress-ring-container {
+  position: relative;
+  display: inline-block;
+  margin: var(--space-4) 0;
+}
+
+.progress-ring-container svg {
+  transform: rotate(-90deg);
+}
+
+.progress-ring-bg {
+  fill: none;
+  stroke: var(--bg-elevated);
+  stroke-width: 8;
+}
+
+.progress-ring-fill {
+  fill: none;
+  stroke: url(#progressGrad);
+  stroke-width: 8;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.8s ease;
+}
+
+.progress-center-text {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.progress-center-text .pct {
+  font-size: var(--font-xl);
+  font-weight: 800;
+  color: var(--text-primary);
+}
+.progress-center-text .lbl {
+  font-size: var(--font-xs);
+  color: var(--text-muted);
+}
+
+/* ---------- Add Event Inline ---------- */
+.inline-add-form {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+.inline-add-form .input {
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--font-xs);
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 900px) {
+  .planner-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .date-nav {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+}
